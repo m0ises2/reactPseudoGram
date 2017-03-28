@@ -1,16 +1,30 @@
+/*
+  { Component } tiene que ser con el object destructuring.
+  Básicamente significa que se importe únicamente la propiedad component del objeto react,
+  de esta manera JS no tiene que importar todo el objeto, sino solo una parte de él.
+  si colocaramos import React from 'react'; tendríamos entonces que colocar en las herencias
+  de las clases React.Component
+  Minuto 11:07 del video de la clase 1.
+  https://carlosazaustre.es/react-firebase/crea-tu-webapp-con-react-js#
+*/
 import React, { Component } from 'react';
 import logo from './logo.svg';
 import './App.css';
 import firebase from 'firebase';
+import FileUploader from './fileUploader';
 
 class App extends Component {
   constructor () {
       super();
+
+      //Objeto state, default en los componentes de React:
       this.state = {
         user: null
       };
-      //Se Setea el contexto this a las funciones ajenas a React,
-      //es decir, las funciones que nosotros creamos.
+      /*
+        Se setea el contexto this a las funciones ajenas a React,
+        es decir, las funciones que nosotros creamos.
+      */
       this.handleAuth = this.handleAuth.bind(this);
       this.handleLogOut = this.handleLogOut.bind(this);
   }
@@ -24,7 +38,6 @@ class App extends Component {
         como <key>: <value>
       */
       this.setState({ user });
-      console.log(this.state);
     });
   }
 
@@ -49,6 +62,7 @@ class App extends Component {
             <img width="200" src={this.state.user.photoURL} alt={this.state.user.displayName} />
             <p> Hola, {this.state.user.displayName} aka m0ises2. </p>
             <button onClick={this.handleLogOut}> LogOut </button>
+            <FileUploader />
           </div>
         );
       } else {
