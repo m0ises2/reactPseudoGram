@@ -19,7 +19,9 @@ class App extends Component {
 
       //Objeto state, default en los componentes de React:
       this.state = {
-        user: null
+        user: null,
+        pictures: [],
+        uploadValue: 0
       };
       /*
         Se setea el contexto this a las funciones ajenas a React,
@@ -27,6 +29,7 @@ class App extends Component {
       */
       this.handleAuth = this.handleAuth.bind(this);
       this.handleLogOut = this.handleLogOut.bind(this);
+      this.handleUpload = this.handleUpload.bind(this);
   }
 
   componentWillMount() {
@@ -39,6 +42,13 @@ class App extends Component {
       */
       this.setState({ user });
     });
+
+    firebase.database().ref('pictures').on('child_added', snapshot => {
+      this.setState({
+        pictures: this.state.pictures.concat(snapshot.val())
+      });
+    });
+    console.log(firebase.database().ref('pictures'));
   }
 
   handleAuth () {
@@ -54,6 +64,36 @@ class App extends Component {
       .catch(error => console.log(`${error.code}: ${error.message}`));
   }
 
+  handleUpload (event) {
+    //console.log("evento del handleUpload: ");
+    //console.log(event);
+    const file = event.target.files[0];
+    console.log(file);
+    const storageRef = firebase.storage().ref(`/fotos/${file.name}`);
+    const task = storageRef.put(file);
+    console.log("entró");
+    task.on('state_changed', snapshot => {
+      //console.log("snapshot del storage: ");
+      //console.log(snapshot);
+      let percentage = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+      this.setState({
+        uploadValue: percentage
+      });
+    }, error => {
+      console.log(error);
+    }, () => {
+      const record = {
+        photoURL: this.state.user.photoURL,
+        displayName: this.state.user.displayName,
+        image: task.snapshot.downloadURL
+      }
+      const dbref = firebase.database().ref('pictures');
+      const newPicture = dbref.push();
+      //console.log(record);
+      newPicture.set(record);
+    });
+  }
+
   renderLoginButton () {
       //si el usuario está loggeado, entonces no mostramos el botón.:
       if (this.state.user) {
@@ -62,7 +102,22 @@ class App extends Component {
             <img width="200" src={this.state.user.photoURL} alt={this.state.user.displayName} />
             <p> Hola, {this.state.user.displayName} aka m0ises2. </p>
             <button onClick={this.handleLogOut}> LogOut </button>
-            <FileUploader />
+            <br/>
+            <progress value={this.state.uploadValue} max="100"></progress>
+            <br/>
+            <FileUploader onUpload={ this.handleUpload }/>
+            {
+              this.state.pictures.map(picture => (
+                <div>
+                  <img width="300" key={picture.photoURL} src={picture.image} alt=""/>
+                  <br/>
+                  <img width="45" src={picture.photoURL} alt={picture.displayName} />
+                  <br/>
+                  <span>{picture.displayName}</span>
+                  <br/>
+                </div>
+              ))
+            }
           </div>
         );
       } else {
